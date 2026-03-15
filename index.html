@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16重动物人格测试 | 解锁你的灵魂本色</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"微软雅黑",sans-serif}
+body{background:linear-gradient(135deg,#fdd6e8 0%,#c7e6f5 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.container{max-width:700px;width:100%;background:#fff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.1);overflow:hidden}
+.start-page{padding:60px 40px;text-align:center}
+.start-page h1{font-size:32px;color:#4a4a4a;margin-bottom:20px}
+.start-page p{font-size:18px;color:#777;margin-bottom:40px;line-height:1.6}
+.start-btn,.restart-btn{padding:15px 40px;background:linear-gradient(90deg,#f8a1d1 0%,#a8c8f2 100%);color:#fff;border:none;border-radius:50px;font-size:18px;cursor:pointer;transition:all 0.3s}
+.start-btn:hover{transform:translateY(-3px)}
+.restart-btn{background:#fff;color:#f8a1d1;border:2px solid #f8a1d1}
+.restart-btn:hover{background:#f8a1d1;color:#fff}
+.question-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;justify-content:center;align-items:center;z-index:999;display:none}
+.modal-content{background:#fff;border-radius:24px;width:90%;max-width:520px;padding:40px 30px;text-align:center;position:relative;max-height:90vh;overflow-y:auto}
+/* 进度条样式 */
+.progress-bar{position:absolute;top:0;left:0;width:100%;height:6px;background:#f5f5f5}
+.progress-fill{height:100%;background:linear-gradient(90deg,#f8a1d1 0%,#a8c8f2 100%);width:0%;transition:width 0.3s ease}
+.question-count{position:absolute;top:20px;right:20px;color:#999}
+.modal-content h2{font-size:22px;color:#444;margin-bottom:30px;line-height:1.5;padding-top:10px}
+.options{display:flex;flex-direction:column;gap:12px}
+.option{padding:14px 20px;border:2px solid #f0d9ee;border-radius:14px;font-size:16px;cursor:pointer;transition:all 0.2s}
+.option:hover{border-color:#f8a1d1;background:#fdf5fb}
+.option.selected{background:linear-gradient(90deg,#f8a1d1 0%,#a8c8f2 100%);color:#fff;border-color:#f8a1d1}
+.option.disabled{pointer-events:none;opacity:0.7}
+.loading{display:none;text-align:center;padding:60px 0}
+.loading-spinner{width:50px;height:50px;border:5px solid #f3e5f5;border-top:5px solid #f8a1d1;border-radius:50%;animation:spin 1s infinite;margin:0 auto 20px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.result-page{padding:40px 30px;text-align:center;display:none}
+.result-header h2{font-size:28px;color:#444;margin-bottom:10px}
+.result-header p{color:#777}
+.animal-avatar{width:220px;height:220px;margin:30px auto;border-radius:50%;overflow:hidden;border:8px solid #fdd6e8;background:#fdf5fb;display:flex;align-items:center;justify-content:center}
+.animal-avatar img{width:100%;height:100%;object-fit:cover}
+/* 图片加载失败样式 */
+.animal-avatar img::after{content:"🐾";font-size:60px;color:#f8a1d1}
+.animal-desc-card{background:#fdf5fb;border-radius:18px;padding:25px;text-align:left;line-height:1.8;margin-bottom:30px}
+.animal-desc-card h3{color:#f8a1d1;margin-bottom:10px}
+
+/* 响应式优化 */
+@media (max-width: 480px) {
+  .start-page{padding:40px 20px}
+  .start-page h1{font-size:26px}
+  .start-page p{font-size:16px}
+  .modal-content{padding:30px 20px}
+  .modal-content h2{font-size:20px}
+  .option{font-size:15px;padding:12px 16px}
+  .animal-avatar{width:180px;height:180px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="start-page" id="start-page">
+    <h1>16重动物人格测试</h1>
+    <p>50道潜意识选择，解锁你灵魂深处的本色<br>跟随内心第一直觉，答案无关对错</p>
+    <button class="start-btn" id="start-btn">解锁我的灵魂动物</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <p>正在解析你的灵魂特质...</p>
+  </div>
+
+  <div class="result-page" id="result-page">
+    <div class="result-header">
+      <h2 id="animal-title">你的灵魂动物：狮子</h2>
+      <p>灵魂本色深度解析</p>
+    </div>
+    <div class="animal-avatar">
+      <img id="animal-img" onerror="this.src='https://img.icons8.com/fluency/220/000000/animal.png'">
+    </div>
+    <div class="animal-desc-card">
+      <h3>灵魂特质</h3>
+      <p id="animal-desc"></p>
+    </div>
+    <button class="restart-btn" id="restart-btn">重新解锁灵魂本色</button>
+  </div>
+</div>
+
+<div class="question-modal" id="question-modal">
+  <div class="modal-content">
+    <!-- 进度条 -->
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="question-count" id="qcount">1/50</div>
+    <h2 id="qtext"></h2>
+    <div class="options">
+      <div class="option" data-key="A">A</div>
+      <div class="option" data-key="B">B</div>
+      <div class="option" data-key="C">C</div>
+      <div class="option" data-key="D">D</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 潜意识风格50道测试题
+var questions = [
+  {q:"深夜独自走在陌生林间，远处传来声响，你第一反应是？",A:"主动上前查看，弄清来源",B:"期待是友善的生灵，轻声回应",C:"停下静静观察，不轻易行动",D:"转身绕道，不想卷入任何事"},
+  {q:"你内心最不能接受的关系状态是？",A:"被轻视、不被尊重",B:"被欺骗、情感背叛",C:"被打乱节奏、失去安稳",D:"被束缚、失去自由"},
+  {q:"如果可以拥有一种超能力，你更想要？",A:"掌控局势与方向",B:"治愈他人的情绪",C:"预知风险与细节",D:"随时隐身独处"},
+  {q:"朋友突然对你冷淡，你会？",A:"直接问清原因，解决问题",B:"内心不安，反复回想自己是否做错",C:"默默观察，不主动追问",D:"不强求，关系顺其自然"},
+  {q:"面对一件必须完成但很枯燥的事，你会？",A:"强迫自己高效做完",B:"找人一起做，减轻枯燥",C:"按步骤慢慢完成，不出错",D:"能拖就拖，最后简单应付"},
+  {q:"你心中理想的亲密关系是？",A:"彼此势均力敌，互相成就",B:"温柔陪伴，永远被理解",C:"稳定长久，不用猜心思",D:"各自独立，互不干涉"},
+  {q:"当你非常疲惫时，最希望？",A:"快速解决所有麻烦，恢复掌控",B:"有人拥抱安慰，温柔陪伴",C:"安静不被打扰，慢慢恢复",D:"彻底放空，什么都不用想"},
+  {q:"别人未经同意用你的东西，你会？",A:"直接表达不满，立好边界",B:"心里不舒服，但不太好说",C:"默默收好，下次提防",D:"无所谓，不算大事"},
+  {q:"在你看来，真正的强大是？",A:"有能力保护想保护的人",B:"温柔却有力量",C:"情绪稳定，遇事不慌",D:"不依赖任何人，内心自足"},
+  {q:"如果人生可以重来，你最想改变？",A:"更勇敢争取想要的",B:"更懂得表达爱与温柔",C:"更早学会保护自己",D:"更随性，不为难自己"},
+  {q:"你潜意识里最害怕？",A:"失败与无能",B:"孤独与不被爱",C:"变化与未知",D:"压力与责任"},
+  {q:"遇到喜欢的人，你更倾向？",A:"主动靠近，明确心意",B:"温柔暗示，慢慢靠近",C:"默默观察，谨慎试探",D:"保持距离，害怕受伤"},
+  {q:"你更欣赏哪类特质？",A:"果断有魄力",B:"善良共情强",C:"沉稳靠谱",D:"通透随性"},
+  {q:"当计划被突然打乱，你会？",A:"立刻调整，重新掌控",B:"有点烦躁，但尽量配合",C:"内心不适，需要时间适应",D:"无所谓，随遇而安"},
+  {q:"别人向你倾诉痛苦，你通常？",A:"给出直接有效的建议",B:"认真倾听，温柔安抚",C:"安静陪伴，适度回应",D:"不知如何安慰，保持沉默"},
+  {q:"你内心深处更像？",A:"永远不服输的挑战者",B:"渴望温暖的柔软者",C:"小心翼翼的守护者",D:"与世无争的自在者"},
+  {q:"如果可以隐居，你会选？",A:"山顶，俯瞰一切",B:"小镇，有人间烟火",C:"林间，安静安稳",D:"孤岛，完全自由"},
+  {q:"你做决定时最容易被什么影响？",A:"目标与结果",B:"情感与感受",C:"风险与后果",D:"轻松与自在"},
+  {q:"你生气到极点时会？",A:"直接爆发，说清底线",B:"委屈难过，情绪崩溃",C:"沉默冷战，不再信任",D:"假装没事，慢慢远离"},
+  {q:"你最无法忍受的相处模式是？",A:"对方软弱无担当",B:"对方冷漠不回应",C:"对方混乱无章法",D:"对方黏人无边界"},
+  {q:"你潜意识里对自己的评价是？",A:"能力足够，不够温柔",B:"太过心软，容易受伤",C:"太过谨慎，不够勇敢",D:"太过懒散，不够上进"},
+  {q:"当你被误解时，你会？",A:"立刻解释，必须澄清",B:"难过委屈，希望对方懂",C:"懒得解释，时间证明",D:"无所谓，懂的人自然懂"},
+  {q:"你更喜欢的相处节奏是？",A:"直接高效，不绕弯子",B:"温暖轻松，舒服自在",C:"慢热稳定，细水长流",D:"淡如水，不黏不缠"},
+  {q:"你内心最渴望被看见的是？",A:"能力与魄力",B:"温柔与善良",C:"隐忍与付出",D:"通透与随性"},
+  {q:"面对别人的请求，你最难拒绝的是？",A:"关乎责任与信任的事",B:"对方示弱可怜的样子",C:"已经答应过的事",D:"不麻烦又不费力的事"},
+  {q:"你觉得真正的成熟是？",A:"收起情绪，解决问题",B:"善待他人，也善待自己",C:"低调行事，稳中求进",D:"看淡得失，自在随心"},
+  {q:"如果世界末日只剩一天，你会？",A:"安排好所有重要的事",B:"陪最爱的人静静度过",C:"待在熟悉安全的地方",D:"随心所欲，不被任何事束缚"},
+  {q:"你更容易对哪类人产生好感？",A:"有主见、气场稳定",B:"温柔体贴、情绪稳定",C:"安静踏实、靠谱细心",D:"随性自在、不较真"},
+  {q:"你内心最深处的底色是？",A:"热烈且倔强",B:"柔软且敏感",C:"冷静且克制",D:"淡然且疏离"},
+  {q:"当你感到迷茫时，你会？",A:"强迫自己找到方向",B:"找人倾诉获得力量",C:"停下来慢慢思考",D:"先放着，顺其自然"},
+  {q:"你最不喜欢别人对你？",A:"指手画脚、否定你",B:"忽冷忽热、消耗你",C:"打乱计划、麻烦你",D:"过度靠近、束缚你"},
+  {q:"你潜意识里的防御方式是？",A:"强势伪装，保护自己",B:"付出讨好，换取安全感",C:"沉默远离，减少期待",D:"佛系看淡，无所谓"},
+  {q:"你更相信？",A:"实力与规则",B:"真心与缘分",C:"经验与细节",D:"感觉与自在"},
+  {q:"你最想改掉自己的一点是？",A:"太过要强，容易累",B:"太过心软，易受伤",C:"太过谨慎，放不开",D:"太过佛系，没动力"},
+  {q:"在一段关系里，你最看重？",A:"尊重与平等",B:"真诚与偏爱",C:"安稳与长久",D:"轻松与自由"},
+  {q:"你内心最真实的生活向往是？",A:"有所成就，被人认可",B:"被爱包围，温暖幸福",C:"安稳平淡，无忧无虑",D:"无拘无束，简单快乐"},
+  {q:"当别人比你优秀很多时，你会？",A:"激发斗志，努力追赶",B:"欣赏对方，虚心学习",C:"默默努力，不声张",D:"无所谓，做好自己就行"},
+  {q:"你处理秘密的方式是？",A:"守口如瓶，极其靠谱",B:"会和最信任的人说",C:"很少分享，藏在心里",D:"不太在意，顺其自然"},
+  {q:"你心中“家”的感觉是？",A:"可以掌控的安全区",B:"充满温暖与拥抱",C:"安静稳定不被打扰",D:"轻松自在无压力"},
+  {q:"你最容易在什么事上内耗？",A:"未完成的目标与责任",B:"人际关系与情绪",C:"未来的风险与不确定",D:"不想做却必须做的事"},
+  {q:"你更像哪种动物的本能？",A:"主动狩猎，占领领地",B:"群居陪伴，互相温暖",C:"谨慎观察，提前避险",D:"独来独往，自由随性"},
+  {q:"你最舒服的状态是？",A:"一切尽在掌握",B:"被理解被偏爱",C:"安稳无波澜",D:"随心所欲不被管"},
+  {q:"你内心最珍贵的东西是？",A:"尊严与底气",B:"真心与温柔",C:"安稳与信任",D:"自由与自我"},
+  {q:"面对新机会，你通常？",A:"主动抓住，敢于挑战",B:"犹豫一下，尝试接受",C:"仔细评估，再做决定",D:"能不接就不接"},
+  {q:"你难过时最明显的表现是？",A:"变得更沉默强势",B:"情绪低落，需要安慰",C:"独自待着，不说话",D:"表面如常，内心淡然"},
+  {q:"你最不能接受的评价是？",A:"没用、没能力",B:"冷漠、没良心",C:"浮躁、不靠谱",D:"懒散、不上进"},
+  {q:"如果可以不用顾及任何人，你会？",A:"拼尽全力实现野心",B:"全心全意去爱一场",C:"安稳度日简单生活",D:"彻底躺平随心所欲"},
+  {q:"你潜意识里的人生态度是？",A:"征服与突破",B:"陪伴与治愈",C:"守护与安稳",D:"随缘与自在"},
+  {q:"你最终想成为什么样的人？",A:"强大而有力量",B:"温柔而有锋芒",C:"稳重而有智慧",D:"通透而有自由"},
+  {q:"你灵魂深处最像？",A:"永不低头的王者",B:"治愈世界的天使",C:"默默守护的骑士",D:"与世无争的隐士"}
+];
+
+// 占卜风16种动物人格描述
+var animals = [
+  {
+    name:"狮子",
+    type:"A",
+    img:"https://img.icons8.com/fluency/220/000000/lion.png",
+    desc:"你的灵魂自带王者底色，生于旷野，心有锋芒。你从不畏惧前路幽暗，也不屑于低头迎合，习惯以沉默的坚韧撑起所有。你习惯做别人的依靠，却很少让人看见你的疲惫。你不是天生强势，只是比谁都清楚：想要守护的东西，必须亲自握紧。愿你在披荆斩棘的路上，也能被人温柔以待。"
+  },
+  {
+    name:"老鹰",
+    type:"A",
+    img:"https://img.icons8.com/fluency/220/000000/eagle.png",
+    desc:"你是高空俯瞰的灵魂，眼光越过人海，望向更远的远方。不困于眼前琐碎，不惑于一时得失，拥有常人不及的格局与清醒。你习惯独立判断，不随波逐流，不被世俗定义。高处或许寒凉，但你本就属于天空。你的人生，从来不是为了迎合，而是为了抵达。"
+  },
+  {
+    name:"海豚",
+    type:"B",
+    img:"https://img.icons8.com/fluency/220/000000/dolphin.png",
+    desc:"你的灵魂由温柔与共情铸成，自带治愈磁场。总能轻易读懂别人的欲言又止，也习惯把情绪藏在温和之下。你珍视每一段缘分，包容每一份不完美，宁愿自己委屈，也不愿伤害他人。你不是没有棱角，只是选择以柔软面对世界。请记得：真正值得的人，会珍惜你的善良，而不是消耗它。"
+  },
+  {
+    name:"孔雀",
+    type:"B",
+    img:"https://img.icons8.com/fluency/220/000000/peacock.png",
+    desc:"你是人间行走的光亮，热烈、明亮、自带光芒。热爱生活，也渴望被真心看见，擅长把平淡日子过得鲜活有趣。你看似外向洒脱，内心却藏着细腻与敏感，很在意被在意。你不必完美，也不必迎合所有人的目光，你本身盛开，自有清风与星光奔你而来。"
+  },
+  {
+    name:"猫头鹰",
+    type:"C",
+    img:"https://img.icons8.com/fluency/220/000000/owl.png",
+    desc:"你是深夜清醒的观察者，冷静、克制、心思缜密。习惯在沉默中思考，在安静里蓄力，不轻易表露，不盲目冲动。你对细节极度敏锐，对秩序有着天然的执着，比旁人更能看透事物本质。你不是冷淡，只是更懂深思熟虑；你不是固执，只是不愿将就。你的稳重，终会护你一生安稳。"
+  },
+  {
+    name:"松鼠",
+    type:"C",
+    img:"https://img.icons8.com/fluency/220/000000/squirrel.png",
+    desc:"你的灵魂藏着细腻的安全感，谨慎、踏实、温柔长情。习惯为未来铺垫，为生活留有余地，不喜欢突如其来的变动，偏爱细水长流的安稳。你认真对待每一份承诺，用心守护每一段关系，看似温和，却有最坚定的底线。你所有的小心翼翼，都是为了让人生稳稳向前。时光不会辜负用心的人。"
+  },
+  {
+    name:"猫",
+    type:"D",
+    img:"https://img.icons8.com/fluency/220/000000/cat.png",
+    desc:"你是独立自由的灵魂，清醒、疏离、自有天地。不喜欢被定义，不热衷热闹，只对真正入心的人敞开心扉。你有自己的节奏与原则，合则亲近，不合则淡然，从不勉强自己，也不刻意讨好。独处对你而言不是孤独，而是能量回归。你不必被所有人理解，懂你的人，自会放慢脚步等你。"
+  },
+  {
+    name:"熊猫",
+    type:"D",
+    img:"https://img.icons8.com/fluency/220/000000/panda.png",
+    desc:"你是人间清醒的佛系行者，温和、通透、与世无争。不执着于争抢，不困于得失，内心自有一片安宁天地。你习惯看淡世事，不与生活较劲，也不与人心纠缠，简单、纯粹、容易满足。你不是没有追求，只是更懂得：人生最好的状态，是心安自在。愿你永远被世界温柔包裹，无忧无虑，从容一生。"
+  },
+  {
+    name:"狼",
+    type:"A",
+    img:"https://img.icons8.com/fluency/220/000000/wolf.png",
+    desc:"你的灵魂藏着野性与忠诚，坚韧、果决、重情重义。认准的路会走到最后，认定的人会拼命守护，有血性，有原则，有不轻易示人的倔强。你不擅长甜言蜜语，却用行动证明真心；你看似冷漠难近，内心却藏着滚烫的温柔。你不必合群，因为强者本就结伴而行。"
+  },
+  {
+    name:"猎豹",
+    type:"A",
+    img:"https://img.icons8.com/fluency/220/000000/cheetah.png",
+    desc:"你是天生的行动派，迅猛、高效、目标清晰。讨厌拖延与犹豫，拒绝停滞与敷衍，一旦下定决心，便全力以赴。你爆发力极强，敢于冲刺，不惧挑战，拥有把想法变成现实的能力。偶尔会因急躁忽略沿途风景，但你的速度，注定让你比别人更早抵达想去的地方。"
+  },
+  {
+    name:"大象",
+    type:"B",
+    img:"https://img.icons8.com/fluency/220/000000/elephant.png",
+    desc:"你是沉稳温柔的守护者，包容、宽厚、情绪稳定。看似沉默，却最可靠；不张扬，却最有力量。你习惯默默承担，温柔包容身边所有人，是别人心中最安心的存在。你不是没有情绪，只是选择体谅；你不是不会难过，只是更懂责任。愿你的温柔，能被同样温柔回应。"
+  },
+  {
+    name:"兔子",
+    type:"B",
+    img:"https://img.icons8.com/fluency/220/000000/rabbit.png",
+    desc:"你的灵魂柔软而敏感，纯真、善良、极易动心。害怕冲突，渴望安全感，习惯用小心翼翼保护自己，却又忍不住对世界真心以待。你容易被感动，也容易被伤害，内心住着一个需要被偏爱的小孩。请记住：温柔不是软弱，善良要有锋芒。你值得被坚定选择，被用心珍惜。"
+  },
+  {
+    name:"蜜蜂",
+    type:"C",
+    img:"https://img.icons8.com/fluency/220/000000/bee.png",
+    desc:"你是默默耕耘的实干者，认真、负责、从不敷衍。习惯用行动代替言语，用付出证明价值，低调踏实，从不抱怨。你对承诺无比看重，对细节极致用心，是身边人最放心的存在。你或许不耀眼，却在自己的世界里闪闪发光。所有默默的努力，终会酿成生活的甜。"
+  },
+  {
+    name:"长颈鹿",
+    type:"C",
+    img:"https://img.icons8.com/fluency/220/000000/giraffe.png",
+    desc:"你是从容优雅的行者，平和、通透、内心强大。不慌不忙，不争不抢，在浮躁世界里保持自己的节奏。你看得远，也想得开，很少被小事困住，拥有难得的松弛感。你不是没有追求，只是不愿急功近利；你不是佛系，只是懂得顺其自然。时光会善待每一个从容生活的人。"
+  },
+  {
+    name:"狐狸",
+    type:"D",
+    img:"https://img.icons8.com/fluency/220/000000/fox.png",
+    desc:"你是灵动通透的智者，聪明、机敏、自有章法。不按常理出牌，不被规则束缚，擅长在复杂中找到最简单的路。你看似随性，实则清醒；看似温和，实则有自己的边界。你懂人情世故，却不愿世故；知人心复杂，仍保留纯粹。你的聪明，终将护你一生顺遂。"
+  },
+  {
+    name:"河马",
+    type:"D",
+    img:"https://img.icons8.com/fluency/220/000000/hippopotamus.png",
+    desc:"你是慢热内敛的灵魂，安静、真诚、外冷内热。不擅长主动，不喜欢喧嚣，只对极少数人敞开心扉。你习惯把温柔藏在沉默里，把真心放在细节中，看似疏离，实则重情。你不是冷漠，只是需要时间靠近；你不是难相处，只是只对值得的人温柔。慢慢来，才最真诚。"
+  }
+];
+
+var idx = 0;
+var answers = [];
+var opts = document.querySelectorAll(".option");
+var qtext = document.getElementById("qtext");
+var qcount = document.getElementById("qcount");
+var modal = document.getElementById("question-modal");
+var startBtn = document.getElementById("start-btn");
+var restartBtn = document.getElementById("restart-btn");
+var progressFill = document.getElementById("progress-fill");
+var isAnswering = false; // 防止重复点击
+
+startBtn.onclick = function(){
+  document.getElementById("start-page").style.display = "none";
+  show(idx);
+};
+
+function show(i){
+  // 更新进度条
+  var progress = ((i+1)/50)*100;
+  progressFill.style.width = progress + "%";
+  
+  qcount.innerText = (i+1)+"/50";
+  qtext.innerText = questions[i].q;
+  opts[0].innerText = "A "+questions[i].A;
+  opts[1].innerText = "B "+questions[i].B;
+  opts[2].innerText = "C "+questions[i].C;
+  opts[3].innerText = "D "+questions[i].D;
+  modal.style.display = "flex";
+  opts.forEach(o=>{
+    o.classList.remove("selected", "disabled");
+  });
+  isAnswering = false; // 重置答题状态
+}
+
+for(var i=0;i<opts.length;i++){
+  opts[i].onclick = function(){
+    // 防止重复点击
+    if(isAnswering) return;
+    isAnswering = true;
+    
+    this.classList.add("selected");
+    // 禁用所有选项
+    opts.forEach(o=>o.classList.add("disabled"));
+    
+    answers[idx] = this.dataset.key;
+    idx++;
+    
+    setTimeout(function(){
+      if(idx<50){
+        show(idx);
+      } else {
+        modal.style.display = "none";
+        document.getElementById("loading").style.display = "block";
+        setTimeout(getResult,1600);
+      }
+    },500);
+  }
+}
+
+function getResult(){
+  var a=0,b=0,c=0,d=0;
+  answers.forEach(k=>{
+    if(k=="A")a++;
+    else if(k=="B")b++;
+    else if(k=="C")c++;
+    else d++;
+  });
+  var max = Math.max(a,b,c,d);
+  var t = a==max?"A":b==max?"B":c==max?"C":"D";
+  var list = animals.filter(x=>x.type==t);
+  var res = list[Math.floor(Math.random()*list.length)];
+  
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("result-page").style.display = "block";
+  document.getElementById("animal-title").innerText = "你的灵魂动物："+res.name;
+  document.getElementById("animal-img").src = res.img;
+  document.getElementById("animal-desc").innerText = res.desc;
+}
+
+restartBtn.onclick = function(){
+  idx=0;
+  answers=[];
+  isAnswering = false;
+  progressFill.style.width = "0%"; // 重置进度条
+  document.getElementById("result-page").style.display = "none";
+  document.getElementById("start-page").style.display = "block";
+};
+
+// 图片加载失败处理
+document.getElementById("animal-img").onerror = function() {
+  this.src = "https://img.icons8.com/fluency/220/000000/animal.png";
+};
+</script>
+</body>
+</html>
